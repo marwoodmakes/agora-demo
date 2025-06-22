@@ -1,46 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Voice Assistant Demo</title>
-    <link
-      rel="icon"
-      type="image/png"
-      href="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/ChatGPT_Image_Jun_16_2025_09_51_46_AM.png?v=1750063921"
-    />
-    <link rel="stylesheet" href="style.css" />
-  </head>
+ <head>
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+   <title>Voice Assistant Demo</title>
+   <link
+     rel="icon"
+     type="image/png"
+     href="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/ChatGPT_Image_Jun_16_2025_09_51_46_AM.png?v=1750063921"
+   />
+   <link rel="stylesheet" href="style.css" />
+ </head>
 
-  <body>
-    <!-- Centered logo header -->
-    <header class="header">
-      <img
-        src="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/ChatGPT_Image_Jun_12_2025_01_05_41_PM.png?v=1749729963"
-        alt="Agora AI Logo"
-        class="logo"
-      />
-    </header>
+ <body>
+   <!-- Slim header with inline logo and download icon -->
+   <header class="header">
+     <div class="header-content">
+       <a href="https://agoraai.co.uk/" target="_blank" rel="noopener">
+         <img
+           src="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/ChatGPT_Image_Jun_12_2025_01_05_41_PM.png?v=1749729963"
+           alt="Agora AI Logo"
+           class="logo"
+         />
+       </a>
+       <a
+         id="downloadBtn"
+         class="icon-btn"
+         title="Download Chat"
+         href="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/Screenshot_2025-06-22_at_21.48.55.png?v=1750630141"
+         download
+       >
+         <img
+           src="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/Screenshot_2025-06-22_at_21.48.55.png?v=1750630141"
+           alt="Download"
+           class="download-icon"
+         />
+       </a>
+     </div>
+   </header>
 
-    <main class="chat-container">
-      <h1>Voice Assistant Demo</h1>
+   <hr class="divider" />
 
-      <div id="chat"></div>
+   <main class="chat-container">
+     <h1>Voice Assistant Demo</h1>
 
-      <audio id="audioPlayer" controls></audio>
+     <div id="chat"></div>
 
-      <button id="downloadBtn" class="icon-btn" title="Download Chat">
-        <img
-          src="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/Screenshot_2025-06-22_at_21.48.55.png?v=1750627473"
-          alt="Download"
-          class="download-icon"
-        />
-      </button>
-    </main>
+     <audio id="audioPlayer" controls></audio>
+   </main>
 
-    <!-- Sticky Talk Button -->
-    <button id="recordButton">Click to Talk</button>
+   <!-- Sticky Talk Button -->
+   <button id="recordButton">Click to Talk</button>
 
-    <script src="script.js"></script>
-  </body>
+   <script src="script.js"></script>
+ </body>
 </html>
