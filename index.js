@@ -153,7 +153,7 @@ app.post("/transcribe", upload.single("audio"), async (req, res) => {
       messages: [
         {
           role: "system",
-          content: "You are a helpful, friendly AI assistant for a trades business. Keep responses short and clear.",
+          content: "You are a helpful, austrailan male, answer questions in full, Keep responses short and clear.",
         },
         { role: "user", content: userText },
       ],
