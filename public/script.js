@@ -7,9 +7,9 @@ const downloadBtn = document.getElementById("downloadBtn");
 const chatDiv = document.getElementById("chat");
 const audioPlayer = document.getElementById("audioPlayer");
 
-function scrollChatToBottom() {
+const scrollToBottom = () => {
   chatDiv.scrollTop = chatDiv.scrollHeight;
-}
+};
 
 const startRecording = async () => {
   if (!navigator.mediaDevices || !window.MediaRecorder) {
@@ -21,7 +21,7 @@ const startRecording = async () => {
   mediaRecorder = new MediaRecorder(stream);
   audioChunks = [];
 
-  // Create one user bubble for both stages
+  // Create user bubble with 🎤 Listening...
   const userBubble = document.createElement("div");
   userBubble.className = "chat-bubble user";
   userBubble.innerHTML = `
@@ -29,17 +29,21 @@ const startRecording = async () => {
     <div class="text">🎤 Listening...</div>
   `;
   chatDiv.appendChild(userBubble);
-  scrollChatToBottom();
+  scrollToBottom();
 
   mediaRecorder.ondataavailable = (event) => {
     audioChunks.push(event.data);
   };
 
   mediaRecorder.onstop = async () => {
-    userBubble.querySelector(".text").textContent = "🟣 Transcribing...";
     const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
     const formData = new FormData();
     formData.append("audio", audioBlob, "input.webm");
+
+    // Update user bubble to say "🟣 Transcribing..."
+    const userText = userBubble.querySelector(".text");
+    userText.textContent = "🟣 Transcribing...";
+    chatLog.push("User: [Recording...]");
 
     try {
       const res = await fetch("/transcribe", {
@@ -50,11 +54,11 @@ const startRecording = async () => {
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
 
-      // 🟣 Show Whisper transcript
-      userBubble.querySelector(".text").textContent = data.transcript;
+      // Replace bubble content with transcript
+      userText.textContent = data.transcript || "[No transcript]";
       chatLog.push("User: " + data.transcript);
 
-      // 🤖 Show Agent response
+      // Add agent bubble
       const agentBubble = document.createElement("div");
       agentBubble.className = "chat-bubble agent";
       agentBubble.innerHTML = `
@@ -63,9 +67,9 @@ const startRecording = async () => {
       `;
       chatDiv.appendChild(agentBubble);
       chatLog.push("Agent: " + data.text);
-      scrollChatToBottom();
+      scrollToBottom();
 
-      // 🔊 Voice playback
+      // Playback
       const audioBlobOut = new Blob(
         [Uint8Array.from(atob(data.audio), (c) => c.charCodeAt(0))],
         { type: "audio/mpeg" }
@@ -74,25 +78,27 @@ const startRecording = async () => {
       audioPlayer.play();
     } catch (err) {
       console.error("Fetch error:", err);
-      userBubble.querySelector(".text").textContent = "❌ Transcription failed.";
-      alert("❌ Failed to get response from server.");
+      userText.textContent = "❌ Could not transcribe.";
     } finally {
-      // Reset button
       recordBtn.innerText = "Click to Talk";
       recordBtn.disabled = false;
     }
   };
 
-  // 🎙️ Start
   mediaRecorder.start();
-  recordBtn.innerText = "Click to Stop";
+  recordBtn.innerText = "Recording... (click to stop)";
+  recordBtn.disabled = true;
+
+  setTimeout(() => {
+    if (mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+    }
+  }, 10000);
 };
 
 recordBtn.onclick = async () => {
   if (mediaRecorder && mediaRecorder.state === "recording") {
     mediaRecorder.stop();
-    recordBtn.innerText = "Processing...";
-    recordBtn.disabled = true;
   } else {
     await startRecording();
   }
