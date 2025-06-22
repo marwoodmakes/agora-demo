@@ -1,7 +1,5 @@
-let isRecording = false;
-let recognition;
-let recognitionTimeout;
-let finalTranscript = "";
+let mediaRecorder;
+let audioChunks = [];
 let chatLog = [];
 
 const recordBtn = document.getElementById("recordButton");
@@ -9,103 +7,85 @@ const downloadBtn = document.getElementById("downloadBtn");
 const chatDiv = document.getElementById("chat");
 const audioPlayer = document.getElementById("audioPlayer");
 
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+recordBtn.onclick = async () => {
+  if (!navigator.mediaDevices || !window.MediaRecorder) {
+    alert("Your browser does not support audio recording.");
+    return;
+  }
 
-function createRecognition() {
-  const recog = new SpeechRecognition();
-  recog.continuous = false;
-  recog.lang = "en-US";
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder = new MediaRecorder(stream);
+  audioChunks = [];
 
-  recog.onstart = () => {
-    finalTranscript = "";
-    recordBtn.innerText = "Listening...";
-    recognitionTimeout = setTimeout(() => recog.stop(), 10000);
+  mediaRecorder.ondataavailable = (event) => {
+    audioChunks.push(event.data);
   };
 
-  recog.onresult = (event) => {
-    finalTranscript = event.results[0][0].transcript;
-  };
+  mediaRecorder.onstop = async () => {
+    const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+    const formData = new FormData();
+    formData.append("audio", audioBlob, "input.webm");
 
-  recog.onend = async () => {
-    clearTimeout(recognitionTimeout);
-    isRecording = false;
-    recordBtn.innerText = "Click to Talk";
-
-    if (!finalTranscript) {
-      alert("No speech detected.");
-      return;
-    }
-
-    // User bubble with favicon avatar
+    // Display user bubble
     const userBubble = document.createElement("div");
     userBubble.className = "chat-bubble user";
     userBubble.innerHTML = `
       <img src="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/ChatGPT_Image_Jun_16_2025_09_51_46_AM.png?v=1750063921" class="avatar" alt="User" />
-      <div class="text">User: ${finalTranscript}</div>
+      <div class="text">[Audio sent]</div>
     `;
     chatDiv.appendChild(userBubble);
-    chatLog.push("User: " + finalTranscript);
+    chatLog.push("User: [Audio sent]");
 
     try {
-      const res = await fetch("/ask", {
+      const res = await fetch("/transcribe", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: finalTranscript })
+        body: formData,
       });
 
       if (!res.ok) throw new Error("Failed to fetch");
 
       const data = await res.json();
 
-      // Agent bubble with emoji avatar
+      // Display agent response
       const agentBubble = document.createElement("div");
       agentBubble.className = "chat-bubble agent";
       agentBubble.innerHTML = `
         <div class="emoji-avatar">🤖</div>
-        <div class="text">Agent: ${data.text}</div>
+        <div class="text">${data.text}</div>
       `;
       chatDiv.appendChild(agentBubble);
       chatLog.push("Agent: " + data.text);
 
-      const audioBlob = new Blob(
-        [Uint8Array.from(atob(data.audio), c => c.charCodeAt(0))],
-        { type: "audio/mp3" }
+      const audioBlobOut = new Blob(
+        [Uint8Array.from(atob(data.audio), (c) => c.charCodeAt(0))],
+        { type: "audio/mpeg" }
       );
-      audioPlayer.src = URL.createObjectURL(audioBlob);
+      audioPlayer.src = URL.createObjectURL(audioBlobOut);
       audioPlayer.play();
-
     } catch (err) {
       console.error("Fetch error:", err);
       alert("❌ Failed to get response from server.");
     }
   };
 
-  recog.onerror = (event) => {
-    console.error("Speech error:", event.error);
-    isRecording = false;
-    clearTimeout(recognitionTimeout);
-    recordBtn.innerText = "Click to Talk";
-    alert("Speech recognition error: " + event.error);
+  mediaRecorder.start();
+  recordBtn.innerText = "Recording... (click to stop)";
+
+  // Stop after 10 seconds automatically
+  setTimeout(() => {
+    if (mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      recordBtn.innerText = "Click to Talk";
+    }
+  }, 10000);
+
+  // Click to manually stop
+  recordBtn.onclick = () => {
+    if (mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      recordBtn.innerText = "Click to Talk";
+    }
   };
-
-  return recog;
-}
-
-recordBtn.onclick = () => {
-  if (!SpeechRecognition) {
-    alert("Speech recognition not supported in this browser.");
-    return;
-  }
-
-  if (!isRecording) {
-    recognition = createRecognition();
-    isRecording = true;
-    recognition.start();
-  } else {
-    isRecording = false;
-    recognition.stop();
-    clearTimeout(recognitionTimeout);
-  }
 };
 
 downloadBtn.onclick = () => {
