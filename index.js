@@ -188,7 +188,8 @@ app.post("/transcribe", upload.single("audio"), async (req, res) => {
     fs.unlinkSync(webmPath);
     fs.unlinkSync(mp3Path);
 
-    res.json({ text: reply, audio: audioBase64 });
+    res.json({ transcript: userText, text: reply, audio: audioBase64 });
+
   } catch (err) {
     console.error("🔥 /transcribe error:", err);
     if (fs.existsSync(webmPath)) fs.unlinkSync(webmPath);
