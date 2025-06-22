@@ -21,7 +21,7 @@ const startRecording = async () => {
   mediaRecorder = new MediaRecorder(stream);
   audioChunks = [];
 
-  // Create user bubble showing listening state
+  // Create one user bubble for both stages
   const userBubble = document.createElement("div");
   userBubble.className = "chat-bubble user";
   userBubble.innerHTML = `
@@ -36,20 +36,10 @@ const startRecording = async () => {
   };
 
   mediaRecorder.onstop = async () => {
+    userBubble.querySelector(".text").textContent = "🟣 Transcribing...";
     const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
     const formData = new FormData();
     formData.append("audio", audioBlob, "input.webm");
-
-    // Show temporary bubble while transcribing
-    const tempUserBubble = document.createElement("div");
-    tempUserBubble.className = "chat-bubble user";
-    tempUserBubble.innerHTML = `
-      <img src="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/ChatGPT_Image_Jun_16_2025_09_51_46_AM.png?v=1750063921" class="avatar" alt="User" />
-      <div class="text">🟣 Transcribing...</div>
-    `;
-    chatDiv.appendChild(tempUserBubble);
-    chatLog.push("User: [Recording...]");
-    scrollChatToBottom();
 
     try {
       const res = await fetch("/transcribe", {
@@ -60,12 +50,11 @@ const startRecording = async () => {
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
 
-      // Replace the temp user bubble text with real transcription
-      tempUserBubble.querySelector(".text").textContent = data.transcript;
+      // 🟣 Show Whisper transcript
+      userBubble.querySelector(".text").textContent = data.transcript;
       chatLog.push("User: " + data.transcript);
-      scrollChatToBottom();
 
-      // Add agent response bubble
+      // 🤖 Show Agent response
       const agentBubble = document.createElement("div");
       agentBubble.className = "chat-bubble agent";
       agentBubble.innerHTML = `
@@ -76,7 +65,7 @@ const startRecording = async () => {
       chatLog.push("Agent: " + data.text);
       scrollChatToBottom();
 
-      // Play the audio reply
+      // 🔊 Voice playback
       const audioBlobOut = new Blob(
         [Uint8Array.from(atob(data.audio), (c) => c.charCodeAt(0))],
         { type: "audio/mpeg" }
@@ -85,28 +74,25 @@ const startRecording = async () => {
       audioPlayer.play();
     } catch (err) {
       console.error("Fetch error:", err);
+      userBubble.querySelector(".text").textContent = "❌ Transcription failed.";
       alert("❌ Failed to get response from server.");
     } finally {
-      recordBtn.disabled = false;
+      // Reset button
       recordBtn.innerText = "Click to Talk";
+      recordBtn.disabled = false;
     }
   };
 
+  // 🎙️ Start
   mediaRecorder.start();
-  recordBtn.innerText = "Recording... (click to stop)";
-  recordBtn.disabled = true;
-
-  // Auto-stop after 10 seconds
-  setTimeout(() => {
-    if (mediaRecorder.state !== "inactive") {
-      mediaRecorder.stop();
-    }
-  }, 10000);
+  recordBtn.innerText = "Click to Stop";
 };
 
 recordBtn.onclick = async () => {
   if (mediaRecorder && mediaRecorder.state === "recording") {
     mediaRecorder.stop();
+    recordBtn.innerText = "Processing...";
+    recordBtn.disabled = true;
   } else {
     await startRecording();
   }
