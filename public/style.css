@@ -22,14 +22,17 @@ html, body {
   
   /* Navigation (desktop only) */
   .navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #f1f2f6;
-  padding: 12px 24px;
-  width: 100%;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background-color: #F1F2F6; /* Revert to light background */
+    color: #1E1E2F;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
+  
   nav a {
   margin: 0 12px;
   color: #1e1e2f;
