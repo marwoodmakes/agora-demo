@@ -200,4 +200,19 @@ html, body {
     transform: translateX(-50%); /* 🧷 Prevent wiggle on hover */
   }
   
+  .icon-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+  }
+  
+  .download-icon {
+    width: 28px;
+    height: 28px;
+    filter: brightness(0) saturate(100%) invert(14%) sepia(19%) saturate(2082%) hue-rotate(216deg) brightness(95%) contrast(89%);
+  }
   

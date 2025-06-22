@@ -7,7 +7,7 @@ const downloadBtn = document.getElementById("downloadBtn");
 const chatDiv = document.getElementById("chat");
 const audioPlayer = document.getElementById("audioPlayer");
 
-let currentUserBubble = null; // Track the bubble to update
+let currentUserBubble = null;
 
 const scrollToBottom = () => {
   chatDiv.scrollTop = chatDiv.scrollHeight;
@@ -23,7 +23,7 @@ const startRecording = async () => {
   mediaRecorder = new MediaRecorder(stream);
   audioChunks = [];
 
-  // Create a new user bubble (🎤 Listening...)
+  // Create user bubble
   currentUserBubble = document.createElement("div");
   currentUserBubble.className = "chat-bubble user";
   currentUserBubble.innerHTML = `
@@ -42,7 +42,6 @@ const startRecording = async () => {
     const formData = new FormData();
     formData.append("audio", audioBlob, "input.webm");
 
-    // Update user bubble to show transcribing state
     currentUserBubble.querySelector(".text").textContent = "🟣 Transcribing...";
     chatLog.push("User: [Recording...]");
     scrollToBottom();
@@ -56,28 +55,45 @@ const startRecording = async () => {
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
 
-      // 🔄 Replace user bubble text with transcript
-      currentUserBubble.querySelector(".text").textContent = data.transcript || "[No transcript]";
-      chatLog.push("User: " + data.transcript);
+      // Show user transcript
+      const userTranscript = data.transcript || "[No transcript]";
+      currentUserBubble.querySelector(".text").textContent = userTranscript;
+      chatLog.push("User: " + userTranscript);
 
-      // 💬 Add agent bubble
+      // Add agent bubble
       const agentBubble = document.createElement("div");
       agentBubble.className = "chat-bubble agent";
       agentBubble.innerHTML = `
         <div class="emoji-avatar">🤖</div>
-        <div class="text">${data.text}</div>
+        <div class="text typing"></div>
       `;
       chatDiv.appendChild(agentBubble);
       chatLog.push("Agent: " + data.text);
       scrollToBottom();
 
-      // 🔊 Play audio response
+      // Typing animation
+      const textEl = agentBubble.querySelector(".text");
+      const fullText = data.text;
+      let i = 0;
+      const typingSpeed = 25;
+      const typeText = () => {
+        if (i < fullText.length) {
+          textEl.textContent += fullText.charAt(i);
+          i++;
+          scrollToBottom();
+          setTimeout(typeText, typingSpeed);
+        }
+      };
+      typeText();
+
+      // Play audio reply
       const audioBlobOut = new Blob(
         [Uint8Array.from(atob(data.audio), (c) => c.charCodeAt(0))],
         { type: "audio/mpeg" }
       );
       audioPlayer.src = URL.createObjectURL(audioBlobOut);
       audioPlayer.play();
+
     } catch (err) {
       console.error("Fetch error:", err);
       alert("❌ Failed to get response from server.");
@@ -91,7 +107,7 @@ const startRecording = async () => {
   recordBtn.innerText = "Recording... (click to stop)";
   recordBtn.classList.add("recording");
 
-  // 🎙️ Auto-stop on silence
+  // Auto-stop on silence
   const audioCtx = new AudioContext();
   const source = audioCtx.createMediaStreamSource(stream);
   const analyser = audioCtx.createAnalyser();
