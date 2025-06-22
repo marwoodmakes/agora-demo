@@ -7,9 +7,9 @@ const downloadBtn = document.getElementById("downloadBtn");
 const chatDiv = document.getElementById("chat");
 const audioPlayer = document.getElementById("audioPlayer");
 
-const scrollToBottom = () => {
+function scrollChatToBottom() {
   chatDiv.scrollTop = chatDiv.scrollHeight;
-};
+}
 
 const startRecording = async () => {
   if (!navigator.mediaDevices || !window.MediaRecorder) {
@@ -21,7 +21,7 @@ const startRecording = async () => {
   mediaRecorder = new MediaRecorder(stream);
   audioChunks = [];
 
-  // Create user bubble with placeholder
+  // Create user bubble showing listening state
   const userBubble = document.createElement("div");
   userBubble.className = "chat-bubble user";
   userBubble.innerHTML = `
@@ -29,16 +29,27 @@ const startRecording = async () => {
     <div class="text">🎤 Listening...</div>
   `;
   chatDiv.appendChild(userBubble);
-  scrollToBottom();
+  scrollChatToBottom();
 
   mediaRecorder.ondataavailable = (event) => {
     audioChunks.push(event.data);
   };
 
   mediaRecorder.onstop = async () => {
-    const audioBlob = new Blob(audioChunks, { type: "audio/mp3" });
+    const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
     const formData = new FormData();
-    formData.append("audio", audioBlob, "input.mp3");
+    formData.append("audio", audioBlob, "input.webm");
+
+    // Show temporary bubble while transcribing
+    const tempUserBubble = document.createElement("div");
+    tempUserBubble.className = "chat-bubble user";
+    tempUserBubble.innerHTML = `
+      <img src="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/ChatGPT_Image_Jun_16_2025_09_51_46_AM.png?v=1750063921" class="avatar" alt="User" />
+      <div class="text">🟣 Transcribing...</div>
+    `;
+    chatDiv.appendChild(tempUserBubble);
+    chatLog.push("User: [Recording...]");
+    scrollChatToBottom();
 
     try {
       const res = await fetch("/transcribe", {
@@ -47,16 +58,14 @@ const startRecording = async () => {
       });
 
       if (!res.ok) throw new Error("Failed to fetch");
-
       const data = await res.json();
 
-      // Replace user placeholder with actual transcription
-      const textDiv = userBubble.querySelector(".text");
-      textDiv.textContent = data.text;
-      chatLog.push("User: " + data.text);
-      scrollToBottom();
+      // Replace the temp user bubble text with real transcription
+      tempUserBubble.querySelector(".text").textContent = data.transcript;
+      chatLog.push("User: " + data.transcript);
+      scrollChatToBottom();
 
-      // Display agent response
+      // Add agent response bubble
       const agentBubble = document.createElement("div");
       agentBubble.className = "chat-bubble agent";
       agentBubble.innerHTML = `
@@ -65,15 +74,15 @@ const startRecording = async () => {
       `;
       chatDiv.appendChild(agentBubble);
       chatLog.push("Agent: " + data.text);
-      scrollToBottom();
+      scrollChatToBottom();
 
+      // Play the audio reply
       const audioBlobOut = new Blob(
         [Uint8Array.from(atob(data.audio), (c) => c.charCodeAt(0))],
         { type: "audio/mpeg" }
       );
       audioPlayer.src = URL.createObjectURL(audioBlobOut);
       audioPlayer.play();
-
     } catch (err) {
       console.error("Fetch error:", err);
       alert("❌ Failed to get response from server.");

@@ -186,4 +186,24 @@ html, body {
       margin: 0;
     }
   }
+  #recordButton {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    padding: 14px 28px;
+    font-size: 16px;
+    background: #5A48D6;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  
+  
+  #recordButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+  }
   
