@@ -11,35 +11,34 @@
     />
     <link rel="stylesheet" href="style.css" />
   </head>
+
   <body>
-    <header class="navbar">
-      <a href="https://agoraai.co.uk/">
-        <img
-          src="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/ChatGPT_Image_Jun_12_2025_01_05_41_PM.png?v=1749729963"
-          alt="AgoraAI logo"
-          class="logo"
-        />
-      </a>
-      <nav>
-        <a href="https://agoraai.co.uk/" class="active">Home</a>
-        <a href="https://agoraai.co.uk/pages/pricing-tiers" class="active">Pricing</a>
-        <a href="https://agoraai.co.uk/pages/contact" class="active">Contact</a>
-        <a href="https://agoraai.co.uk/pages/about-us" class="active">Company</a>
-        <a href="https://agoraai.co.uk/pages/service" class="active">Service</a>
-      </nav>
+    <!-- Centered logo header -->
+    <header class="header">
+      <img
+        src="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/ChatGPT_Image_Jun_12_2025_01_05_41_PM.png?v=1749729963"
+        alt="Agora AI Logo"
+        class="logo"
+      />
     </header>
 
     <main class="chat-container">
       <h1>Voice Assistant Demo</h1>
+
       <div id="chat"></div>
+
       <audio id="audioPlayer" controls></audio>
+
       <button id="downloadBtn" class="icon-btn" title="Download Chat">
-        <img src="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/Screenshot_2025-06-22_at_21.48.55.png?v=1750625806" alt="Download" class="download-icon" />
+        <img
+          src="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/Screenshot_2025-06-22_at_21.48.55.png?v=1750625806"
+          alt="Download"
+          class="download-icon"
+        />
       </button>
-      
     </main>
 
-    <!-- Sticky Talk Button (now outside <main>) -->
+    <!-- Sticky Talk Button -->
     <button id="recordButton">Click to Talk</button>
 
     <script src="script.js"></script>
