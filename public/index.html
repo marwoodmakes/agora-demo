@@ -23,19 +23,13 @@
            class="logo"
          />
        </a>
-       <a
-         id="downloadBtn"
-         class="icon-btn"
-         title="Download Chat"
-         href="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/Screenshot_2025-06-22_at_21.48.55.png?v=1750630141"
-         download
-       >
+       <button id="downloadBtn" class="icon-btn" title="Download Transcript">
          <img
            src="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/Screenshot_2025-06-22_at_21.48.55.png?v=1750630141"
            alt="Download"
            class="download-icon"
          />
-       </a>
+       </button>
      </div>
    </header>
 
@@ -51,6 +45,28 @@
 
    <!-- Sticky Talk Button -->
    <button id="recordButton">Click to Talk</button>
+
+   <script>
+     document.getElementById("downloadBtn").addEventListener("click", function () {
+       const chat = document.getElementById("chat");
+       let text = "";
+
+       chat.querySelectorAll(".chat-bubble").forEach((bubble) => {
+         const isUser = bubble.classList.contains("user");
+         const label = isUser ? "User: " : "Agent: ";
+         const message = bubble.querySelector(".text")?.innerText || "";
+         text += `${label}${message}\n\n`;
+       });
+
+       const blob = new Blob([text], { type: "text/plain" });
+       const link = document.createElement("a");
+       link.href = URL.createObjectURL(blob);
+       link.download = "transcript.txt";
+       document.body.appendChild(link);
+       link.click();
+       document.body.removeChild(link);
+     });
+   </script>
 
    <script src="script.js"></script>
  </body>
