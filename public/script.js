@@ -7,6 +7,8 @@ const downloadBtn = document.getElementById("downloadBtn");
 const chatDiv = document.getElementById("chat");
 const audioPlayer = document.getElementById("audioPlayer");
 
+let currentUserBubble = null; // Track the bubble to update
+
 const scrollToBottom = () => {
   chatDiv.scrollTop = chatDiv.scrollHeight;
 };
@@ -21,14 +23,14 @@ const startRecording = async () => {
   mediaRecorder = new MediaRecorder(stream);
   audioChunks = [];
 
-  // Create user bubble with 🎤 Listening...
-  const userBubble = document.createElement("div");
-  userBubble.className = "chat-bubble user";
-  userBubble.innerHTML = `
+  // Create a new user bubble (🎤 Listening...)
+  currentUserBubble = document.createElement("div");
+  currentUserBubble.className = "chat-bubble user";
+  currentUserBubble.innerHTML = `
     <img src="https://cdn.shopify.com/s/files/1/0910/8389/9266/files/ChatGPT_Image_Jun_16_2025_09_51_46_AM.png?v=1750063921" class="avatar" alt="User" />
     <div class="text">🎤 Listening...</div>
   `;
-  chatDiv.appendChild(userBubble);
+  chatDiv.appendChild(currentUserBubble);
   scrollToBottom();
 
   mediaRecorder.ondataavailable = (event) => {
@@ -40,10 +42,10 @@ const startRecording = async () => {
     const formData = new FormData();
     formData.append("audio", audioBlob, "input.webm");
 
-    // Update user bubble to say "🟣 Transcribing..."
-    const userText = userBubble.querySelector(".text");
-    userText.textContent = "🟣 Transcribing...";
+    // Update user bubble to show transcribing state
+    currentUserBubble.querySelector(".text").textContent = "🟣 Transcribing...";
     chatLog.push("User: [Recording...]");
+    scrollToBottom();
 
     try {
       const res = await fetch("/transcribe", {
@@ -54,11 +56,11 @@ const startRecording = async () => {
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
 
-      // Replace bubble content with transcript
-      userText.textContent = data.transcript || "[No transcript]";
+      // 🔄 Replace user bubble text with transcript
+      currentUserBubble.querySelector(".text").textContent = data.transcript || "[No transcript]";
       chatLog.push("User: " + data.transcript);
 
-      // Add agent bubble
+      // 💬 Add agent bubble
       const agentBubble = document.createElement("div");
       agentBubble.className = "chat-bubble agent";
       agentBubble.innerHTML = `
@@ -69,7 +71,7 @@ const startRecording = async () => {
       chatLog.push("Agent: " + data.text);
       scrollToBottom();
 
-      // Playback
+      // 🔊 Play audio response
       const audioBlobOut = new Blob(
         [Uint8Array.from(atob(data.audio), (c) => c.charCodeAt(0))],
         { type: "audio/mpeg" }
@@ -78,27 +80,54 @@ const startRecording = async () => {
       audioPlayer.play();
     } catch (err) {
       console.error("Fetch error:", err);
-      userText.textContent = "❌ Could not transcribe.";
-    } finally {
-      recordBtn.innerText = "Click to Talk";
-      recordBtn.disabled = false;
+      alert("❌ Failed to get response from server.");
     }
+
+    recordBtn.innerText = "Click to Talk";
+    recordBtn.classList.remove("recording");
   };
 
   mediaRecorder.start();
   recordBtn.innerText = "Recording... (click to stop)";
-  recordBtn.disabled = true;
+  recordBtn.classList.add("recording");
 
-  setTimeout(() => {
-    if (mediaRecorder.state !== "inactive") {
-      mediaRecorder.stop();
+  // 🎙️ Auto-stop on silence
+  const audioCtx = new AudioContext();
+  const source = audioCtx.createMediaStreamSource(stream);
+  const analyser = audioCtx.createAnalyser();
+  source.connect(analyser);
+  const data = new Uint8Array(analyser.frequencyBinCount);
+
+  let silenceStart = null;
+  const silenceThreshold = 0.01;
+  const silenceDelay = 2000;
+
+  function detectSilence() {
+    analyser.getByteFrequencyData(data);
+    const volume = data.reduce((a, b) => a + b) / data.length;
+
+    if (volume < silenceThreshold * 255) {
+      if (!silenceStart) silenceStart = Date.now();
+      else if (Date.now() - silenceStart > silenceDelay && mediaRecorder.state === "recording") {
+        console.log("🛑 Silence detected, stopping...");
+        mediaRecorder.stop();
+      }
+    } else {
+      silenceStart = null;
     }
-  }, 10000);
+
+    if (mediaRecorder.state === "recording") {
+      requestAnimationFrame(detectSilence);
+    }
+  }
+  detectSilence();
 };
 
 recordBtn.onclick = async () => {
   if (mediaRecorder && mediaRecorder.state === "recording") {
     mediaRecorder.stop();
+    recordBtn.innerText = "Processing...";
+    recordBtn.classList.remove("recording");
   } else {
     await startRecording();
   }
